@@ -1,0 +1,106 @@
+# @package _global_
+
+#   python src/train.py experiment=f6_expflow trainer=gpu
+
+defaults:
+  - override /data: era5Global6hr
+  - override /model: flowmatching6hr
+  - override /callbacks: default
+  - override /trainer: ddp
+  - override /hydra: default
+  - override /logger: aim 
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+exp_name: f6_w1c
+model_name: flowmatchingSwin6hr
+tags: ["flow"]
+seed: 4
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${model_name}/exp_${exp_name} #${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/multiruns/${model_name}/exp_${exp_name} #${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+
+trainer:
+  # accumulate_grad_batches: 1
+  precision: bf16-mixed
+  min_epochs: 1
+  max_epochs: 60
+  gradient_clip_val: 0
+  num_sanity_val_steps: 0
+
+callbacks:
+  model_checkpoint:
+    dirpath: ${paths.output_dir}/checkpoints
+    filename: "epoch_{epoch:03d}"
+    monitor: "val/loss"
+    mode: "min"
+    save_last: True
+    auto_insert_metric_name: False
+    every_n_epochs: 1
+    save_top_k: -1
+
+  early_stopping:
+    monitor: "val/loss"
+    patience: 50
+    mode: "min"
+
+model:
+  optimizer:
+    lr: 3e-7
+  scheduler: null
+  net:
+    _target_: src.models.components.dit_swin3d_v4_lowrank_tdim.SwinTransformer3D
+    in_chans_2d: 6 
+    in_chans_3d: 5
+    in_chans_st: 11
+    patch_size: [2, 4, 4]
+    embed_dim: 256
+    window_size: [2, 5, 9]
+    depths: [2, 12, 2]
+    num_heads: [8, 16, 8]
+    use_checkpoint: True
+  flow:
+    _target_: src.models.components.flows.OTConditionalFlow
+    sigma_min: 0
+  training_cfg: 
+    ema_decay: 0.9999 # `-1` disables it
+    t_schedule: "uniform_discrete"
+    is_level_weights: True
+  inference_cfg:
+    sampler: "euler_nonorm_6hr"
+    num_sampling_step: 1
+  compile: False
+  automatic_optimization: True
+  result_dir: ${paths.output_dir}/results
+
+data:
+  batch_size: 4
+  dataset_cfg:
+    region: global
+    resolution: 1.0
+    input_step: 1
+    start_lead: 1
+    forecast_step: 1
+    autoregressive_step: 120
+    norm: False
+    norm_method: meanstd
+    sample_interval: 1 
+    use_static: True
+    add_latlon_time: True
+  dataset_split:
+    train: ['2000-01-01 00:00', '2019-12-31 00:00', 1]
+    val: ['2021-07-01 00:00', '2021-07-31 23:00', 6]
+    test: ['2021-07-01 00:00', '2021-07-31 23:00', 12]
+
+logger:
+  aim:
+    experiment: ${model_name}_exp_${exp_name}
+
+ckpt_path: null
+
+train: True
+test: True

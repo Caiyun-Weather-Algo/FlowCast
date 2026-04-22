@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Environments
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Data & artifacts (not for public git)
+data/*
+!data/.gitkeep
+!data/README.md
+logs/
+lightning_logs/
+outputs/
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.nc
+*.zarr
+.zarr/
+
+# Keys & local overrides
+*.pem
+configs/local/*
+!configs/local/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Optional loggers
+wandb/
+mlruns/

@@ -1,0 +1,56 @@
+_target_: src.data.era5Global6hr_datamodule.ERA5DataModule
+data_dir: ${paths.data_dir}
+batch_size: 4 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+num_workers: 4
+pin_memory: True
+
+dataset_split:
+  train: ['2017-01-01 00:00', '2019-12-31 23:00', 1]
+  val: ['2020-07-01 00:00', '2020-07-31 23:00', 720]
+  test: ['2021-07-01 00:00', '2021-07-31 23:00', 12]
+  predict: ['2021-07-01 00:00', '2021-07-31 23:00', 12]
+
+dataset_cfg:
+  region: global
+  resolution: 1.0
+  input_step: 1
+  start_lead: 1
+  forecast_step: 1
+  autoregressive_step: 1
+  use_static: False
+  add_latlon_time: False
+  norm: False
+  norm_method: meanstd
+  sample_interval: 2
+  input:
+    static:
+    - geopotential_at_surface
+    - land_sea_mask
+    - soil_type
+    surface:
+    - 2m_temperature
+    - 2m_dewpoint_temperature
+    - mean_sea_level_pressure
+    - 10m_u_component_of_wind
+    - 10m_v_component_of_wind
+    - total_precipitation
+    high:
+    - geopotential
+    - temperature
+    - specific_humidity
+    - u_component_of_wind
+    - v_component_of_wind
+    levels:
+    - 1000
+    - 925
+    - 850
+    - 700
+    - 600
+    - 500
+    - 400
+    - 300
+    - 250
+    - 200
+    - 150
+    - 100
+    - 50

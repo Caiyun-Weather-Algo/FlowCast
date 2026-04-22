@@ -1,0 +1,31 @@
+input:
+  static:
+  - geopotential_at_surface
+  - land_sea_mask
+  - soil_type
+  surface:
+  - 2m_temperature
+  - mean_sea_level_pressure
+  - 10m_u_component_of_wind
+  - 10m_v_component_of_wind
+  - total_precipitation
+  high:
+  - geopotential
+  - temperature
+  - specific_humidity
+  - u_component_of_wind
+  - v_component_of_wind
+  levels:
+  - 1000
+  - 925
+  - 850
+  - 700
+  - 600
+  - 500
+  - 400
+  - 300
+  - 250
+  - 200
+  - 150
+  - 100
+  - 50

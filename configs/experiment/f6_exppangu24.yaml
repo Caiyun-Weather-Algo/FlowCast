@@ -1,0 +1,88 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /data: era5Global6hr
+  - override /model: pangu
+  - override /callbacks: default
+  - override /trainer: ddp
+  - override /hydra: default
+  - override /logger: aim 
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+exp_name: f6_pangu24
+model_name: pangu
+tags: ["dtm"]
+seed: 42
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${model_name}/exp_${exp_name} #${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/multiruns/${model_name}/exp_${exp_name} #${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+
+trainer:
+  min_epochs: 10
+  max_epochs: 50
+  gradient_clip_val: 0
+  num_sanity_val_steps: 0
+
+callbacks:
+  model_checkpoint:
+    dirpath: ${paths.output_dir}/checkpoints
+    filename: "epoch_{epoch:03d}"
+    monitor: "val/loss"
+    mode: "min"
+    save_last: True
+    auto_insert_metric_name: False
+
+  early_stopping:
+    monitor: "val/loss"
+    patience: 50
+    mode: "min"
+
+model:
+  optimizer:
+    lr: 0.0003
+  net:
+    _target_: src.models.components.pangu.Pangu
+    img_size: [181, 360]
+    patch_size: [2, 4, 4]
+    embed_dim: 256 # 192
+    num_heads: [8, 16, 16, 8] #[6, 12, 12, 6]
+    window_size: [2, 5, 9]  #[2, 6, 12]
+  compile: false
+  result_dir: ${paths.output_dir}/results
+
+data:
+  batch_size: 16
+  dataset_cfg:
+    region: global
+    resolution: 1.0
+    input_step: 1
+    start_lead: 24
+    forecast_step: 1
+    autoregressive_step: 5
+    norm: False
+    norm_method: meanstd
+    sample_interval: 1
+    use_static: True
+    add_latlon_time: True
+  dataset_split:
+    train: ['1980-01-01 00:00', '2019-12-31 23:00', 1]
+    val: ['2021-07-01 00:00', '2021-07-31 23:00', 1]
+    test: ['2021-07-01 00:00', '2021-08-11 23:00', 12]
+    predict: ['2021-12-20 00:00', '2021-12-31 23:00', 12]
+
+logger:
+  aim:
+    experiment: ${model_name}_exp_${exp_name}
+
+ckpt_path: null
+
+train: True
+test: True

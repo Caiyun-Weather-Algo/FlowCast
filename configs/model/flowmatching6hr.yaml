@@ -1,0 +1,40 @@
+_target_: src.models.flowmatching6hr_module.FlowMatchingModule
+
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.0001
+  weight_decay: 0.01
+  betas:  
+    - 0.9  
+    - 0.95  
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  _partial_: true
+  T_0: 50
+  T_mult: 1
+  eta_min: 1e-12
+
+net:
+  _target_: src.models.components.dit_swin3d_v4_lowrank_tdim.SwinTransformer3D
+
+flow:
+  _target_: src.models.components.flows.OTConditionalFlow
+ # sigma_min: 0
+
+solver:
+  _target_: src.models.components.partial_solver.PartialSolver
+  _partial_: true
+
+training_cfg: 
+  ema_decay: 0.9999 # `-1` disables it
+  t_schedule: "lognormal"
+  is_level_weights: False
+
+inference_cfg:
+  sampler: "euler"
+  num_sampling_step: 40
+  
+# compile model for faster training with pytorch 2.0
+compile: false
